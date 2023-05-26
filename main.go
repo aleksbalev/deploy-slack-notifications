@@ -3,35 +3,37 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
-)
 
-type InputData struct {
-	webhookPath string
-}
+	"github.com/joho/godotenv"
+)
 
 type Message struct {
 	Text string `json:"text"`
 }
 
-func existWithError(err error) {
-	fmt.Fprintf(os.Stderr, "Slack notification error: %s \n", err)
-}
-
 func main() {
-	tempHook := "T059NH4TER0/B05A17WKJDP/ULWETY3DAgzi4llUEkoFMxGF"
-	// envKey := flag.String("envKey", "webhook", "Set env key from which cli has to get Webhook Key")
-	webhookPath := fmt.Sprintf("https://hooks.slack.com/services/%s", tempHook)
-
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-
-	currentTime := time.Now().Format("2022-04-30 11:30:42")
+	
+	contentType := "application/json"
+	
+	err := godotenv.Load()
+	if err != nil {
+		errorLog.Fatal(err)
+		return
+	}
+	
+	currentTime := currentTime()
+	webhookKey := getWebhookKey()
+	
 	text := fmt.Sprintf("Stage deployed at: %s", currentTime)
+	webhookPath := fmt.Sprintf("https://hooks.slack.com/services/%s", webhookKey)
 
 	message := Message{
 		Text: text,
@@ -43,14 +45,7 @@ func main() {
 		return
 	}
 
-	// client := http.Client{}
-
-	// fmt.Println(webhookPath)
-	// request, err := http.NewRequest(http.MethodPost, webhookPath, string(jsonData))
-	// if err != nil {
-	// 	errorLog.Fatal(err)
-	// }
-	resp, err := http.Post(webhookPath, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post(webhookPath, contentType, bytes.NewBuffer(jsonData))
 	if err != nil {
 		errorLog.Fatal(err)
 		return
@@ -59,4 +54,20 @@ func main() {
 	defer resp.Body.Close()
 
 	infoLog.Printf("Message `%s` was sent successfully", text)
+}
+
+func currentTime() string {
+	now := time.Now()
+	formattedTime := now.Format("02.01.2006 15:04:05")
+
+	return formattedTime
+}
+
+func getWebhookKey() string {
+	envKey := flag.String("envKey", "webhook", "Set env key from which cli has to get Webhook Key")
+	flag.Parse()
+
+	webhookKey := os.Getenv(*envKey)
+
+	return webhookKey
 }
