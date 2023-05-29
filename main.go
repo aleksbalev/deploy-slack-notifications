@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type Message struct {
@@ -18,22 +16,19 @@ type Message struct {
 }
 
 func main() {
+	webhookKey := flag.String("webhookKey", "webhook", "Webhook Key to send POST request to bot. \n Format: XXXXXXXXX/YYYYYYYY/XXXXXXXXX")
+
+	flag.Parse()
+
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	
+
 	contentType := "application/json"
-	
-	err := godotenv.Load()
-	if err != nil {
-		errorLog.Fatal(err)
-		return
-	}
-	
+
 	currentTime := currentTime()
-	webhookKey := getWebhookKey()
-	
+
 	text := fmt.Sprintf("Stage deployed at: %s", currentTime)
-	webhookPath := fmt.Sprintf("https://hooks.slack.com/services/%s", webhookKey)
+	webhookPath := fmt.Sprintf("https://hooks.slack.com/services/%s", *webhookKey)
 
 	message := Message{
 		Text: text,
@@ -61,13 +56,4 @@ func currentTime() string {
 	formattedTime := now.Format("02.01.2006 15:04:05")
 
 	return formattedTime
-}
-
-func getWebhookKey() string {
-	envKey := flag.String("envKey", "webhook", "Set env key from which cli has to get Webhook Key")
-	flag.Parse()
-
-	webhookKey := os.Getenv(*envKey)
-
-	return webhookKey
 }
