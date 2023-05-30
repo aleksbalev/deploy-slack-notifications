@@ -17,7 +17,6 @@ type Message struct {
 
 func main() {
 	webhookKey := flag.String("webhookKey", "webhook", "Webhook Key to send POST request to bot. \n Format: XXXXXXXXX/YYYYYYYY/XXXXXXXXX")
-
 	flag.Parse()
 
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
