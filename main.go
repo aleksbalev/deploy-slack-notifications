@@ -51,7 +51,7 @@ func main() {
 }
 
 func currentTime() string {
-	now := time.Now()
+	now := time.Now().Local().Add(time.Hour * 2)
 	formattedTime := now.Format("02.01.2006 15:04:05")
 
 	return formattedTime
