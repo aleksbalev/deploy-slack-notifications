@@ -25,9 +25,16 @@ func main() {
 	contentType := "application/json"
 
 	currentTime := currentTime()
-	version := getVersion("projects/wflow-main-app/package.json")
+	var text string
 
-	text := fmt.Sprintf("Stage deployed: \n - Datetime: *%s*\n - Version: *%s*", currentTime, version)
+	version, err := getVersion("projects/wflow-main-app/package.json")
+	if err != nil {
+		text = fmt.Sprintf("Stage deployed: \n - Datetime: *%s*\n", currentTime)
+		ErrorLog().Println(err)
+	} else {
+		text = fmt.Sprintf("Stage deployed: \n - Datetime: *%s*\n - Version: *%s*", currentTime, version)
+	}
+
 	webhookPath := fmt.Sprintf("https://hooks.slack.com/services/%s", *webhookKey)
 
 	message := Message{
@@ -51,26 +58,31 @@ func main() {
 	InfoLog().Printf("Message `%s` was sent successfully", text)
 }
 
-func getVersion(path string) string {
+func getVersion(path string) (string, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		ErrorLog().Fatal(err)
+		return "", err
 	}
 
 	var packageJSON PackageJSON
 	err = json.Unmarshal(data, &packageJSON)
 	if err != nil {
-		ErrorLog().Fatal(err)
+		return "", err
 	}
 
 	version := packageJSON.Version
 
-	return version
+	return version, nil
 }
 
 func currentTime() string {
-	now := time.Now().Local().Add(time.Hour * 2)
-	formattedTime := now.Format("02.01.2006 15:04:05")
+	loc, err := time.LoadLocation("CET")
+	if err != nil {
+		ErrorLog().Fatal("Can't load location: ", err)
+	}
 
-	return formattedTime
+	now := time.Now()
+	czechia := now.In(loc).Format("02.01.2006 15:04:05")
+
+	return czechia
 }
